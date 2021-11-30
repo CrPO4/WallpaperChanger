@@ -17,11 +17,12 @@ This program was forked and modified by me to work better in a multi-monitor set
 
 Changes include:
 
-1. Renamed the config file to 'WallpaperChanger.config'.
-2. All lines from the config file are applied (used to pick one at random). This means you can now specify a different wallpaper for each monitor in a multi-monitor setup.
-3. Config file lines can now include both a style and a monitor number.
-4. Config file can now contain comments and blank lines. Start the line with a # to comment it out.  
-5. Changed default style to Fill.
+1. Renamed the default config file to 'WallpaperChanger.config'.
+2. Different config files can be used (with the -c option).
+3. All lines from the config file are applied. This means you can now specify a different wallpaper for each monitor in a multi-monitor setup.
+4. Config file lines can now include both a style and a monitor number.
+5. Config file can now contain comments and blank lines. Start the line with a # to comment it out.  
+6. Changed default style to Fill.
 
 ## Use
 
@@ -58,6 +59,9 @@ an image and can optionally include the monitor index or the style code to use. 
 When setting the monitor index in the config file the format of the line should be: `<file> -m <index>`
 You can comment out a line in the config file by starting the line with a # character.
 
+You can also specify a config file:
+*   -c <full_path_to_config_file>
+    
 The file type can be any of the standard picture types (png, bmp, jpg, gif, etc.). The program will automatically convert the file to a png/bmp file and place it within the users temp directory. Storing the png/bmp file in the temp directory should be fine in most cases, however if you would prefer to use an alternative directory you can specify it as parameter number 3.  On Windows 8 or higher it will use a png file for better quality.  It seems Windows 7 and lower cannot use a png file directly so a bmp file is used instead.  Note: On Windows 7 (and lower) if you are using extremely high resolution images then you may run into the "artifact" problem after Windows sets the file as the background.  If you notice artifacts then my recommendation is to use a separate program to lower the resolution of the original image or try saving it as a different file type first (e.g. jpg).
 
 When using the config file it should be formatted like this:

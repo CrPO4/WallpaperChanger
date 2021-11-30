@@ -31,6 +31,9 @@
 //
 // When setting the monitor index in the config file the format of the line should be: <file> -m <index>
 // You can comment out a line in the config file by starting the line with a # character.
+//
+// You can also specify a config file:
+//   -c <full_path_to_config_file>
 // 
 // This program is intended to be used as a "helper" program that is executed from other programs
 
@@ -204,7 +207,9 @@ namespace WallpaperChanger
                 + "The file should be named 'WallpaperChanger.config'.  Each line in the file should have the full path "
                 + "to an image and can optionally include the monitor index or the style code to use.  If the style is not specified it will default to Fill."
                 + "\n\nWhen setting the monitor index in the config file the format of the line should be: <file> -m <index>\n"
-                + "You can comment out a line in the config file by starting the line with a # character.";
+                + "You can comment out a line in the config file by starting the line with a # character."
+                + "\n\nYou can also specify a config file:\n"
+                + "  -c <full_path_to_config_file>";
             help += "\n";
 
             String path = "";
@@ -231,6 +236,20 @@ namespace WallpaperChanger
                 else
                 {
                     Console.WriteLine(help);
+                    return 1;
+                }
+            }
+            else if (args[0] == "-c" || args[0] == "-config")
+            {
+                // a config file has been specified
+                if (args.Length == 2 && File.Exists(args[1]))
+                {
+                    ProcessConfig(args[1], storagePath);
+                    return 0;
+                }
+                else
+                {
+                    Console.WriteLine("The -c argument requires a full path to the config file");
                     return 1;
                 }
             }
