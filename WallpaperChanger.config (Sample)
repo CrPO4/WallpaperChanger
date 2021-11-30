@@ -1,0 +1,10 @@
+# Monitor 0
+"C:\Wallpapers\Sample 1.png" -m 0
+# "C:\Wallpapers\Sample 2.jpg" -m 0
+
+# Monitor 1
+# "C:\Wallpapers\Sample 3.png" -m 1
+"C:\Wallpapers\Sample 4.jpg" -m 1
+
+# Monitor 2
+"C:\Wallpapers\Sample 5.png" 3 -m 2

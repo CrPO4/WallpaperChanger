@@ -6,7 +6,7 @@
 //  <file> is the complete path to the file
 //  <directory> is the complete path to a directory containing image files
 //    a random image from the directory will be set as the background
-//  <style> is an integer (if no style is specified it defaults to Stretched):
+//  <style> is an integer (if no style is specified it defaults to Fill):
 //    0 for Tiled
 //    1 for Centered
 //    2 for Stretched
@@ -15,7 +15,7 @@
 //  <location> is the complete path to a directory for storing the generated file
 //    defaults to the temp folder which should be fine in most cases
 //
-// If the style argument is not specified it will default to Stretched.
+// If the style argument is not specified it will default to Fill.
 //
 // Optional flags:
 //   -h, -help   - Display the usage help
@@ -25,11 +25,12 @@
 //          -m <index> <file|directory> <location>
 //
 // Alternatively a config file can be placed in the same directory as the WallpaperChanger executable.
-// The file should be named 'config' without any file extension.  Each line in the file should have
+// The file should be named 'WallpaperChanger.config'.  Each line in the file should have
 // the full path to an image and can optionally include the monitor index or the style code to use. 
-// If the style is not specified it will default to Stretched.
+// If the style is not specified it will default to Fill.
 //
 // When setting the monitor index in the config file the format of the line should be: <file> -m <index>
+// You can comment out a line in the config file by starting the line with a # character.
 // 
 // This program is intended to be used as a "helper" program that is executed from other programs
 
@@ -73,7 +74,7 @@ namespace WallpaperChanger
                 else
                     img.Save(storagePath, System.Drawing.Imaging.ImageFormat.Bmp);
             
-                // update the regsitry
+                // update the registry
                 RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true);
                 if (style == Style.Tiled)
                 {
@@ -121,11 +122,7 @@ namespace WallpaperChanger
         /// <summary>
         /// Saves the file to the storage path location and sets it as the background for the specified monitor
         /// </summary>
-        /// <param name="monitorIndex"></param>
-        /// <param name="file"></param>
-        /// <param name="storagePath"></param>
-        /// <returns></returns>
-        public static int SetMonitor(int monitorIndex, String file, String storagePath)
+        public static int SetMonitor(int monitorIndex, String file, Style style)
         {
             try
             {
@@ -136,10 +133,28 @@ namespace WallpaperChanger
                 }
 
                 IDesktopWallpaper wallpaper = (IDesktopWallpaper)new DesktopWallpaper();
-                System.Drawing.Image img = System.Drawing.Image.FromFile(file);
-                // convert and save the image as a png file (png format should work better than bmp to avoid artifacts, but only available on Win8 or higher)
-                img.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png);
-                wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)monitorIndex), storagePath);
+                wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)monitorIndex), file);
+
+                DesktopWallpaperPosition pos = DesktopWallpaperPosition.Fill;
+                switch (style)
+                {
+                    case Style.Tiled:
+                        pos = DesktopWallpaperPosition.Tile;
+                        break;
+                    case Style.Centered:
+                        pos = DesktopWallpaperPosition.Center;
+                        break;
+                    case Style.Stretched:
+                        pos = DesktopWallpaperPosition.Stretch;
+                        break;
+                    case Style.Fit:
+                        pos = DesktopWallpaperPosition.Fit;
+                        break;
+                    case Style.Fill:
+                        pos = DesktopWallpaperPosition.Fill;
+                        break;
+                }
+                wallpaper.SetPosition(pos);
             }
             catch (Exception ex)
             { // catch everything just in case
@@ -174,11 +189,11 @@ namespace WallpaperChanger
                 + "  <file> is the complete path to the file\n"
                 + "  <directory> is the complete path to a directory containing image files\n"
                 + "    a random image from the directory will be set as the background\n"
-                + "  <style> is an integer (if no style is specified it defaults to Stretched):\n"
+                + "  <style> is an integer (if no style is specified it defaults to Fill):\n"
                 + "    0 for Tiled\n    1 for Centered\n    2 for Stretched\n    3 for Fit (Windows 7 or later)\n    4 for Fill (Windows 7 or later)\n"
                 + "  <location> is the complete path to a directory for storing the generated file\n"
                 + "    defaults to the temp folder which should be fine in most cases";
-            help += "\n\nIf the style argument is not specified it will default to Stretched.";
+            help += "\n\nIf the style argument is not specified it will default to Fill.";
             help += "\n\nOptional flags:\n"
                 + "  -h, -help   - Display the usage help\n"
                 + "  -r, -remove - Remove the current wallpaper\n"
@@ -186,16 +201,16 @@ namespace WallpaperChanger
                 + "     When using this option the full syntax is:\n"
                 + "       -m <index> <file|directory> <location>";
             help += "\n\nAlternatively a config file can be placed in the same directory as the WallpaperChanger executable. "
-                + "The file should be named 'config' without any file extension.  Each line in the file should have the full path "
-                + "to an image and can optionally include the monitor index or the style code to use.  If the style is not specified it will default to Stretched."
-                + "\n\nWhen setting the monitor index in the config file the format of the line should be: <file> -m <index>";
+                + "The file should be named 'WallpaperChanger.config'.  Each line in the file should have the full path "
+                + "to an image and can optionally include the monitor index or the style code to use.  If the style is not specified it will default to Fill."
+                + "\n\nWhen setting the monitor index in the config file the format of the line should be: <file> -m <index>\n"
+                + "You can comment out a line in the config file by starting the line with a # character.";
             help += "\n";
 
             String path = "";
-            bool usingConfig = false;
             bool setMonitor = false;
             int monitorIndex = 0;
-            Style style = Style.Stretched; // default value
+            Style style = Style.Fill; // default value
             // Use png file for Win 8 or higher, otherwise use bmp file
             String fileType = "png";
             if (!IsWin8OrHigher())
@@ -207,11 +222,11 @@ namespace WallpaperChanger
             if (args.Length == 0)
             {
                 // a config file can be stored in the same directory as the wallpaper changer
-                String configFile = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "config");
+                String configFile = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "WallpaperChanger.config");
                 if (File.Exists(configFile))
                 {
-                    path = configFile;
-                    usingConfig = true;
+                    ProcessConfig(configFile, storagePath);
+                    return 0;
                 }
                 else
                 {
@@ -220,44 +235,41 @@ namespace WallpaperChanger
                 }
             }
 
-            if (!usingConfig)
+            // special check for a help flag
+            if (args[0] == "-h" || args[0] == "--help" || args[0] == "-help")
             {
-                // special check for a help flag
-                if (args[0] == "-h" || args[0] == "--help" || args[0] == "-help")
+                Console.WriteLine(help);
+                return 1;
+            }
+            // remove wallpaper flag
+            else if (args[0] == "-r" || args[0] == "-remove")
+            {
+                return Remove();
+            }
+            // specify monitor
+            else if (args[0] == "-m" || args[0] == "-monitor")
+            {
+                if (!IsWin8OrHigher())
+                {
+                    Console.WriteLine("Specifying a monitor is only supported on Windows 8 or higher\n");
+                    return 1;
+                }
+                if (args.Length < 3)
                 {
                     Console.WriteLine(help);
                     return 1;
                 }
-                // remove wallpaper flag
-                else if (args[0] == "-r" || args[0] == "-remove")
+                setMonitor = true;
+                monitorIndex = int.Parse(args[1]);
+                path = args[2];
+            }
+            // retrieve file/directory if we are not using config file
+            else
+            {
+                path = args[0];
+                if (args.Length >= 2)
                 {
-                    return Remove();
-                }
-                // specify monitor
-                else if (args[0] == "-m" || args[0] == "-monitor")
-                {
-                    if (!IsWin8OrHigher())
-                    {
-                        Console.WriteLine("Specifying a monitor is only supported on Windows 8 or higher\n");
-                        return 1;
-                    }
-                    if (args.Length < 3)
-                    {
-                        Console.WriteLine(help);
-                        return 1;
-                    }
-                    setMonitor = true;
-                    monitorIndex = int.Parse(args[1]);
-                    path = args[2];
-                }
-                // retrieve file/directory if we are not using config file
-                else
-                {
-                    path = args[0];
-                    if (args.Length >= 2)
-                    {
-                        style = (Wallpaper.Style)Enum.Parse(typeof(Wallpaper.Style), args[1]);
-                    }
+                    style = (Wallpaper.Style)Enum.Parse(typeof(Wallpaper.Style), args[1]);
                 }
             }
 
@@ -274,30 +286,11 @@ namespace WallpaperChanger
                 storagePath = Path.Combine(args[index], "wallpaper." + fileType);
             }
 
-            if (usingConfig)
-            {
-                String file;
-                ProcessConfig(path, out file, out style, out setMonitor, out monitorIndex);
-                if (file == null)
-                {
-                    Console.WriteLine("\nNo valid images found in the config file: {0}", path);
-                    return 1;
-                }
-
-                int status = 0;
-                if (setMonitor)
-                    status = Wallpaper.SetMonitor(monitorIndex, file, storagePath);
-                else
-                    status = Wallpaper.Set(file, style, storagePath);
-                
-                if (status == 1)
-                    return 1;
-            }
-            else if (File.Exists(path))
+            if (File.Exists(path))
             {
                 int status = 0;
                 if (setMonitor)
-                    status = Wallpaper.SetMonitor(monitorIndex, path, storagePath);
+                    status = Wallpaper.SetMonitor(monitorIndex, path, style);
                 else
                     status = Wallpaper.Set(path, style, storagePath);
                 if (status == 1)
@@ -313,7 +306,7 @@ namespace WallpaperChanger
                 }
                 int status = 0;
                 if (setMonitor)
-                    status = Wallpaper.SetMonitor(monitorIndex, file, storagePath);
+                    status = Wallpaper.SetMonitor(monitorIndex, file, style);
                 else
                     status = Wallpaper.Set(file, style, storagePath);
                 if (status == 1)
@@ -383,21 +376,17 @@ namespace WallpaperChanger
         }
 
         /// <summary>
-        /// Get the list of files from the config file and choose a random image
+        /// Apply the image from each line of the config file
         /// </summary>
         /// <param name="path">config file</param>
-        /// <param name="file">filled in with the selected image file</param>
-        /// <param name="style">filled in with the style</param>
-        /// <param name="setMonitor">filled in with true if a monitor index was specified, false otherwise</param>
-        /// <param name="monitorIndex">filled in with the monitor index (when specified)</param>
-        static void ProcessConfig(String path, out String file, out Style style, out bool setMonitor, out int monitorIndex)
+        /// <param name="storagePath">temp file</param>
+        static void ProcessConfig(String path, String storagePath)
         {
-            file = null;
-            style = Style.Stretched;
-            setMonitor = false;
-            monitorIndex = 0;
+            string file = null;
+            Style style = Style.Fill;
+            bool setMonitor = false;
+            int monitorIndex = 0;
             ArrayList files = new ArrayList();
-            bool finished = false;
             
             try
             {
@@ -406,7 +395,10 @@ namespace WallpaperChanger
                     String line;
                     while ((line = sr.ReadLine()) != null)
                     {
-                        files.Add(line);
+                        if (line.Trim() != "" && line[0] != '#')
+                        {
+                            files.Add(line);
+                        }
                     }
                 }
             }
@@ -421,18 +413,12 @@ namespace WallpaperChanger
                 return;
             }
 
-            // initialize a Random object with a unique seed (based on the current time)
-            Random randomObject = new Random(((int)DateTime.Now.Ticks));
-
-            // select a random file and check it
-            while (!finished)
+            // Apply all the images
+            for (int index = 0; index < files.Count; index++)
             {
-                // pick a random index from the list
-                int index = randomObject.Next(0, files.Count);
-
                 String f = (String)files[index];
                 // parse the file
-                // can contain file and optionally the monitor index or style
+                // can contain file and optionally the style and monitor index
                 // split on the space between them, and combine values within double quotes (e.g. files with a space in the path)
                 MatchCollection matches = Regex.Matches(f, @"(?<match>[^\s""]+)|""(?<match>[^""]*)""");
                 String tmpFile = matches[0].Groups["match"].Value;
@@ -441,35 +427,37 @@ namespace WallpaperChanger
                 if (File.Exists(tmpFile))
                 {
                     file = tmpFile;
-                    finished = true;
 
                     // parse the other options
-                    if (matches.Count >= 2)
+                    int argNum = 1;
+                    while (argNum < matches.Count)
                     {
-                        string value = matches[1].Groups["match"].Value;
+                        string value = matches[argNum].Groups["match"].Value;
+
                         // check if a monitor index is specified
                         if (value == "-m" || value == "-monitor")
                         {
-                            if (matches.Count >= 3 && IsWin8OrHigher() && int.TryParse(matches[2].Groups["match"].Value, out monitorIndex))
+                            argNum++;
+
+                            value = matches[argNum].Groups["match"].Value;
+                            if (argNum < matches.Count && IsWin8OrHigher() && int.TryParse(value, out monitorIndex))
                             {
                                 setMonitor = true;
                             }
+                            argNum++;
                         }
-                        // otherwise parse the style
                         else
-                            style = (Wallpaper.Style)Enum.Parse(typeof(Wallpaper.Style), matches[1].Groups["match"].Value);
+                        {
+                            // parse the style
+                            style = (Wallpaper.Style)Enum.Parse(typeof(Wallpaper.Style), matches[argNum].Groups["match"].Value);
+                            argNum++;
+                        }
                     }
-                }
-                // remove it from the list
-                else
-                {
-                    files.RemoveAt(index);
-                }
 
-                // if the files list is now empty, end the loop
-                if (files.Count == 0)
-                {
-                    finished = true;
+                    if (setMonitor)
+                        Wallpaper.SetMonitor(monitorIndex, file, style);
+                    else
+                        Wallpaper.Set(file, style, storagePath);
                 }
             }
         }
